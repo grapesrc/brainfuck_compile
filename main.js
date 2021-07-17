@@ -4,8 +4,12 @@ var asm_main = ""; //アセンブラのメイン処理のソースコード。
 
 var plus_n = 0; //"+"の記号が連続したときの"+"の個数（一度にポインタに代入する値）
 var minus_n = 0; //plus_nの"+"が"-"になっただけ
+var pplus_n = 0 //>
+var pminus_n = 0 //<
 var loop_n = 0; //今まで読み込んだループ"["の数
 var input_n = 0; //今まで読み込んだ","入力の数
+
+var pmove_c = 0; //ポインタが移動されたかされていないか
 
 function compile(){
     //初期化
@@ -13,8 +17,11 @@ function compile(){
     asm_main = ""
     plus_n = 0
     minus_n = 0
+    pplus_n = 0
+    pminus_n = 0
     loop_n = 0
     input_n = 0
+    pmove_c = 1
     get_code = document.getElementById("codearea").value
 
     //不要なものを抜く
@@ -35,16 +42,12 @@ function compile(){
                     }else{
                         //一度の代入を終わる
                         plus_n += 1
-                        asm_main += "MOV CL,[SI]\n"
-                        +"ADD CL,"+plus_n+"\n"
-                        +"MOV BYTE [SI],CL\n\n"
+                        asm_main += "ADD BYTE [SI],"+plus_n+"\n\n"
                         plus_n = 0
                     }
                 }else{
                     plus_n += 1
-                    asm_main += "MOV CL,[SI]\n"
-                    +"ADD CL,"+plus_n+"\n"
-                    +"MOV BYTE [SI],CL\n\n"
+                    asm_main += "ADD BYTE [SI],"+plus_n+"\n\n"
                 }
                 break;
 
@@ -56,24 +59,48 @@ function compile(){
                         }else{
                             //一度の代入を終わる
                             minus_n += 1
-                            asm_main += "MOV CL,[SI]\n"
-                            +"SUB CL,"+minus_n+"\n"
-                            +"MOV BYTE [SI],CL\n\n"
+                            asm_main += "SUB BYTE [SI],"+minus_n+"\n\n"
                             minus_n = 0
                         }
                     }else{
                         minus_n += 1
-                        asm_main += "MOV CL,[SI]\n"
-                        +"SUB CL,"+minus_n+"\n"
-                        +"MOV BYTE [SI],CL\n\n"
+                        asm_main += "SUB BYTE [SI],"+minus_n+"\n\n"
                     }
                     break;
 
             case ">":
-                asm_main += "ADD SI,1\n\n"
+                if(code.length - i != 1){　//これが一番最後の文字でないなら
+    
+                    if(code[i+1] == ">"){ //次の記号が-なら
+                        pplus_n += 1
+                    }else{
+                        //一度の代入を終わる
+                        pplus_n += 1
+                        asm_main += "ADD SI,"+pplus_n+"\n\n"
+                        pplus_n = 0
+                        pmove_c = 1
+                    }
+                }else{
+                    pplus_n += 1
+                    asm_main += "ADD SI,"+pplus_n+"\n\n"
+                }
                 break;
             case "<":
-                asm_main += "SUB SI,1\n\n"
+                if(code.length - i != 1){　//これが一番最後の文字でないなら
+    
+                    if(code[i+1] == "<"){ //次の記号が-なら
+                        pminus_n += 1
+                    }else{
+                        //一度の代入を終わる
+                        pminus_n += 1
+                        asm_main += "SUB SI,"+pminus_n+"\n\n"
+                        pminus_n = 0
+                        pmove_c = 1
+                    }
+                }else{
+                    pminus_n += 1
+                    asm_main += "SUB SI,"+pminus_n+"\n\n"
+                }
                 break;
             case "[":
                 loop_n += 1
@@ -87,7 +114,6 @@ function compile(){
             case ".":
                 asm_main += "MOV AL,[SI]\n"
                 +"MOV AH,0x0e\n"
-                +"MOV BX,15\n"
                 +"INT 0x10\n\n"
                 break;
             case ",":
